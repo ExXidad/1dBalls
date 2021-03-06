@@ -25,7 +25,7 @@ long double collisionDt(Ball &ball1, Ball &ball2)
 
 int main()
 {
-	long double eps = pow(10, -3);
+	system("bash add_rm_res");
 
 	std::vector<Ball> balls(3);
 
@@ -39,8 +39,8 @@ int main()
 		if (i < 10)
 		{
 			balls[i].setM(1);
-			balls[i].setX(urd(gen));
-			balls[i].setX(1. / 3 * i);
+//			balls[i].setX(urd(gen));
+			balls[i].setX(1. / balls.size() * i);
 		} else
 		{
 			balls[i].setM(1. / 4);
@@ -54,17 +54,15 @@ int main()
 	for (int i = 1; i < balls.size() - 1; ++i)
 	{
 		balls[i].setNextBall(balls[i + 1].self());
-		balls[i].setPrevBall(balls[i - 1].self());
 	}
-	balls[0].setPrevBall(balls.end()->self());
 	balls[0].setNextBall(balls[1].self());
 	(balls.end() - 1)->setNextBall(balls[0].self());
-	(balls.end() - 1)->setPrevBall((balls.end() - 2)->self());
 
 	long double v0 = 1;
 
 	balls[0].setV(v0);
 
+//	set t here
 	long double tMax = 10, t = 0;
 
 	for (auto &ball : balls)
@@ -81,6 +79,8 @@ int main()
 	}
 
 	file.close();
+
+	bool flag = false;
 
 	while (t < tMax)
 	{
@@ -103,35 +103,51 @@ int main()
 					tmpBall = &ball;
 					minDt = ball.getNextBallCollisionDt();
 				}
-			} else if (ball.getNextBallCollisionDt() > 0)
+			} else if (ball.getNextBallCollisionDt() > 0 && ball.getNextBallCollisionDt() < minDt)
 			{
 				tmpBall = &ball;
-				minDt = std::min(minDt, ball.getNextBallCollisionDt());
+				minDt = ball.getNextBallCollisionDt();
 			}
 		}
 
 		if (minDt < 0) exit(1);
 
-		std::cout << "dt: " << minDt << std::endl;
 		for (auto &ball : balls)
 		{
-			std::cout << ball.getX() << std::endl;
+//			std::cout << ball.getX() << std::endl;
 			ball.update(minDt);
-			ball.minImgConv();
+			ball.applyPeriodicBC();
 		}
 
 		tmpBall->collideWithNext();
 
 		t += minDt;
 
+		// Debug
+//		std::cout << "t: " << t << " dt: " << minDt << std::endl;
+//		for (auto &ball : balls)
+//		{
+//			ball.show();
+//		}
+//		std::cout << std::endl;
+
 		file.open("../results/" + std::to_string(t), std::ios::out);
 
 		for (auto &ball : balls)
 		{
-			file << ball.getM() << "\t" << ball.getX() << "\t" << ball.getV() << std::endl;
+			file << ball.getM() << "\t" << ball.getX() + ball.getBcCounter() << "\t" << ball.getV() << std::endl;
 		}
 
 		file.close();
+
+//		if (!flag && t > tMax/2)
+//		{
+//			for (auto &ball : balls)
+//			{
+//				ball.setV(-ball.getV());
+//			}
+//			flag = true;
+//		}
 	}
 
 	return 0;

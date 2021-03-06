@@ -14,13 +14,13 @@ private:
 	long double m;
 	long double x;
 	long double v;
-	long double distToNext, distToPrev;
-	Ball *nextBall, *prevBall;
-	long double nextBallCollisionDt, prevBallCollisionDt;
-public:
-	long double getDistToPrev() const;
+	long double distToNext;
+	Ball *nextBall;
+	long double nextBallCollisionDt;
+	int bCCounter = 0;
 
-	void setDistToPrev(long double distToPrev);
+public:
+	int getBcCounter() const;
 
 	long double getNextBallCollisionDt() const;
 
@@ -33,10 +33,6 @@ public:
 	Ball *getNextBall() const;
 
 	void setNextBall(Ball *nextBall);
-
-	Ball *getPrevBall() const;
-
-	void setPrevBall(Ball *prevBall);
 
 	long double getM() const;
 
@@ -54,10 +50,6 @@ public:
 
 	void setDistToNext(long double distToNext);
 
-	int sgn(const long double &x)
-	{ return (x >= 0 ? 1 : -1); }
-
-
 public:
 	Ball(const long double &m = 1, const long double x = 0, const long double v = 0) : m{m}, x{x}, v{v}
 	{}
@@ -66,7 +58,7 @@ public:
 
 	void update(const long double &dt);
 
-	void minImgConv();
+	void applyPeriodicBC();
 
 	Ball *self()
 	{ return this; }
