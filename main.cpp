@@ -20,6 +20,8 @@ int main()
 
 		double inversionDeltaVStep = 0.01;
 		double inversionDeltaVMax = 1;
+
+		long double ballInitialX;
 		for (double inversionDeltaV = 0; inversionDeltaV < inversionDeltaVMax; inversionDeltaV += inversionDeltaVStep)
 		{
 			std::vector<Ball> balls(10);
@@ -58,11 +60,14 @@ int main()
 
 			///////////////////////////////////////////////////////////////////////////////////
 
+			int stepCounter = 0;
 			long double t = 0;
 
-			bool flag = false;
+			bool inversionFlag = false;
+			bool firstStepFlag = true;
+			bool countStepsUp = true;
 
-			while (t < inversionTime * 2)
+			while (true)
 			{
 				for (Ball &ball : balls)
 				{
@@ -103,18 +108,40 @@ int main()
 
 				t += minDt;
 
-				if (!flag && t > inversionTime)
+				if (!inversionFlag && t > inversionTime)
 				{
+					balls[0].setV(balls[0].getV() +5);
 					for (auto &ball : balls)
 					{
 						ball.setV(-ball.getV());
 					}
 					tmpBall->collideWithNext();
-					flag = true;
+					inversionFlag = true;
+					countStepsUp = false;
+				}
+
+				if (!firstStepFlag)
+				{
+					if (countStepsUp)
+						++stepCounter;
+					else
+						--stepCounter;
+				}
+
+				if (firstStepFlag)
+				{
+					ballInitialX = balls[0].getX();
+					firstStepFlag = false;
+				}
+
+				if (stepCounter <= 0)
+				{
+					break;
 				}
 			}
 			std::cout << "Progress: " << inversionDeltaV / inversionDeltaVMax * 100 << "%" << std::endl;
-			file << inversionDeltaV << "\t" << balls[0].getX() - ballInitialX <<std::endl;
+			file << inversionDeltaV << "\t" << balls[0].getX() - ballInitialX << std::endl;
+			std::cout << ballInitialX << "\t" << balls[0].getX() << std::endl;
 		}
 		file.close();
 	}
