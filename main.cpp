@@ -27,7 +27,7 @@ int main()
 {
 	system("bash add_rm_res");
 
-	std::vector<Ball> balls(3);
+	std::vector<Ball> balls(10);
 
 	std::mt19937_64 gen;
 	gen.seed(time(nullptr));
@@ -36,15 +36,16 @@ int main()
 
 	for (int i = 0; i < balls.size(); ++i)
 	{
-		if (i < 10)
+		if (i < 5)
 		{
 			balls[i].setM(1);
-//			balls[i].setX(urd(gen));
+			balls[i].setX(urd(gen));
 			balls[i].setX(1. / balls.size() * i);
 		} else
 		{
 			balls[i].setM(1. / 4);
 			balls[i].setX(urd(gen));
+			balls[i].setX(1. / balls.size() * i);
 		}
 	}
 
@@ -63,7 +64,7 @@ int main()
 	balls[0].setV(v0);
 
 //	set t here
-	long double tMax = 10, t = 0;
+	long double tMax = 100, t = 0;
 
 	for (auto &ball : balls)
 	{
@@ -92,6 +93,7 @@ int main()
 		{
 			ball.updCollisionDt();
 		}
+
 		long double minDt = -1;
 		Ball *tmpBall;
 		for (auto &ball : balls)
@@ -123,31 +125,30 @@ int main()
 
 		t += minDt;
 
-		// Debug
-//		std::cout << "t: " << t << " dt: " << minDt << std::endl;
-//		for (auto &ball : balls)
-//		{
-//			ball.show();
-//		}
-//		std::cout << std::endl;
+//		 Debug
+		std::cout << "t: " << t << " dt: " << minDt << std::endl;
+		for (auto &ball : balls)
+		{
+			ball.show();
+		}
+		std::cout << std::endl;
 
 		file.open("../results/" + std::to_string(t), std::ios::out);
-
 		for (auto &ball : balls)
 		{
 			file << ball.getM() << "\t" << ball.getX() + ball.getBcCounter() << "\t" << ball.getV() << std::endl;
 		}
-
 		file.close();
 
-//		if (!flag && t > tMax/2)
-//		{
-//			for (auto &ball : balls)
-//			{
-//				ball.setV(-ball.getV());
-//			}
-//			flag = true;
-//		}
+		if (!flag && t > tMax / 2)
+		{
+			for (auto &ball : balls)
+			{
+				ball.setV(-ball.getV());
+			}
+			tmpBall->collideWithNext();
+			flag = true;
+		}
 	}
 
 	return 0;
