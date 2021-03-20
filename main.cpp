@@ -12,26 +12,26 @@
 
 int main()
 {
-	std::vector<double> inversionTimes{30, 60, 90};
+	std::vector<double> inversionTimes{30};
 	for (const auto &inversionTime : inversionTimes)
 	{
 		std::fstream file;
 		file.open("../perturbations/" + std::to_string(inversionTime), std::ios::out);
 
-		double inversionDeltaVStep = 0.01;
+		double inversionDeltaVStep = 0.001;
 		double inversionDeltaVMax = 1;
 
 		long double ballInitialX;
 		for (double inversionDeltaV = 0; inversionDeltaV < inversionDeltaVMax; inversionDeltaV += inversionDeltaVStep)
 		{
-			std::vector<Ball> balls(10);
+			std::vector<Ball> balls(100);
 
 			std::mt19937_64 gen;
 			gen.seed(time(nullptr));
 
 			for (int i = 0; i < balls.size(); ++i)
 			{
-				if (i < 5)
+				if (i < 100)
 				{
 					balls[i].setM(1);
 					balls[i].setX(1. / balls.size() * i);
@@ -45,7 +45,7 @@ int main()
 			std::sort(balls.begin(), balls.end(),
 					  [](Ball &ball1, Ball &ball2) { return ball1.getX() < ball2.getX(); });
 
-			long double ballInitialX = balls[0].getX();
+			ballInitialX = balls[0].getX();
 
 			for (int i = 1; i < balls.size() - 1; ++i)
 			{
@@ -61,7 +61,7 @@ int main()
 			///////////////////////////////////////////////////////////////////////////////////
 
 			int stepCounter = 0;
-			long double t = 0;
+			long double t = 0, tRequired;
 
 			bool inversionFlag = false;
 			bool firstStepFlag = true;
@@ -110,7 +110,7 @@ int main()
 
 				if (!inversionFlag && t > inversionTime)
 				{
-					balls[0].setV(balls[0].getV() +5);
+					balls[0].setV(balls[0].getV() + inversionDeltaV);
 					for (auto &ball : balls)
 					{
 						ball.setV(-ball.getV());
@@ -126,6 +126,11 @@ int main()
 						++stepCounter;
 					else
 						--stepCounter;
+
+					if (stepCounter <= 0)
+					{
+						break;
+					}
 				}
 
 				if (firstStepFlag)
@@ -133,15 +138,12 @@ int main()
 					ballInitialX = balls[0].getX();
 					firstStepFlag = false;
 				}
-
-				if (stepCounter <= 0)
-				{
-					break;
-				}
 			}
 			std::cout << "Progress: " << inversionDeltaV / inversionDeltaVMax * 100 << "%" << std::endl;
-			file << inversionDeltaV << "\t" << balls[0].getX() - ballInitialX << std::endl;
-			std::cout << ballInitialX << "\t" << balls[0].getX() << std::endl;
+			long double x1 = ballInitialX;
+			long double x2 = balls[0].getX();
+			file << inversionDeltaV << "\t"
+				 << std::min({std::abs(x1 - x2), std::abs(1 - (x2 - x1)), std::abs(1 - (x1 - x2))}) << std::endl;
 		}
 		file.close();
 	}
