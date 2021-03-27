@@ -10,28 +10,33 @@
 #include <ctime>
 #include "Ball.h"
 
+bool approxEqual(const long double &a, const long double &b, const double &eps = 0.00001)
+{
+	return std::abs(a - b) < eps;
+}
+
 int main()
 {
-	std::vector<double> inversionTimes{30};
+	std::vector<double> inversionTimes{5};
 	for (const auto &inversionTime : inversionTimes)
 	{
-		std::fstream file;
+		std::fstream file, file1;
 		file.open("../perturbations/" + std::to_string(inversionTime), std::ios::out);
 
-		double inversionDeltaVStep = 0.001;
-		double inversionDeltaVMax = 1;
+		double inversionDeltaVStep = pow(10, -4);
+		double inversionDeltaVMax = pow(10, -1);
 
 		long double ballInitialX;
 		for (double inversionDeltaV = 0; inversionDeltaV < inversionDeltaVMax; inversionDeltaV += inversionDeltaVStep)
 		{
-			std::vector<Ball> balls(100);
+			std::vector<Ball> balls(30);
 
 			std::mt19937_64 gen;
 			gen.seed(time(nullptr));
 
 			for (int i = 0; i < balls.size(); ++i)
 			{
-				if (i < 100)
+				if (i < 15)
 				{
 					balls[i].setM(1);
 					balls[i].setX(1. / balls.size() * i);
@@ -60,15 +65,14 @@ int main()
 
 			///////////////////////////////////////////////////////////////////////////////////
 
-			int stepCounter = 0;
-			long double t = 0, tRequired;
+			long double t = 0;
 
 			bool inversionFlag = false;
-			bool firstStepFlag = true;
-			bool countStepsUp = true;
 
 			while (true)
 			{
+				bool nonCCIncrementFlag = false;
+
 				for (Ball &ball : balls)
 				{
 					ball.updDistancesToNeighbours();
@@ -98,46 +102,57 @@ int main()
 
 				if (minDt < 0) exit(1);
 
-				for (auto &ball : balls)
+				if (!inversionFlag && t + minDt > inversionTime)
 				{
-					ball.update(minDt);
-					ball.applyPeriodicBC();
+					for (auto &ball : balls)
+					{
+						ball.update(inversionTime - t);
+						ball.applyPeriodicBC();
+					}
+					t += inversionTime - t;
+					nonCCIncrementFlag = true;
+				} else if (inversionFlag && t + minDt > inversionTime * 2)
+				{
+					for (auto &ball : balls)
+					{
+						ball.update(2 * inversionTime - t);
+						ball.applyPeriodicBC();
+					}
+					t += 2 * inversionTime - t;
+					nonCCIncrementFlag = true;
+				} else
+				{
+					for (auto &ball : balls)
+					{
+						ball.update(minDt);
+						ball.applyPeriodicBC();
+					}
+					t += minDt;
+					tmpBall->collideWithNext();
 				}
 
-				tmpBall->collideWithNext();
-
-				t += minDt;
-
-				if (!inversionFlag && t > inversionTime)
+				if (!inversionFlag && approxEqual(t, inversionTime))
 				{
 					balls[0].setV(balls[0].getV() + inversionDeltaV);
 					for (auto &ball : balls)
-					{
 						ball.setV(-ball.getV());
-					}
-					tmpBall->collideWithNext();
+
+					if (!nonCCIncrementFlag)
+						tmpBall->collideWithNext();
+
 					inversionFlag = true;
-					countStepsUp = false;
 				}
 
-				if (!firstStepFlag)
-				{
-					if (countStepsUp)
-						++stepCounter;
-					else
-						--stepCounter;
+//				file1.open("../results/" + std::to_string(t), std::ios::out);
+//				for (auto &ball : balls)
+//				{
+//					file1 << ball.getM() << "\t" << ball.getX() + ball.getBcCounter() << "\t" << ball.getV()
+//						  << std::endl;
+//				}
+//				file1.close();
 
-					if (stepCounter <= 0)
-					{
-						break;
-					}
-				}
-
-				if (firstStepFlag)
-				{
-					ballInitialX = balls[0].getX();
-					firstStepFlag = false;
-				}
+				if (approxEqual(t, 2 * inversionTime))
+					break;
 			}
 			std::cout << "Progress: " << inversionDeltaV / inversionDeltaVMax * 100 << "%" << std::endl;
 			long double x1 = ballInitialX;
